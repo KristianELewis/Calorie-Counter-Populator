@@ -1,0 +1,25 @@
+{
+  "name": "calorie-counter-populator",
+  "version": "0.1.0",
+  "description": "Creates testing data for my Calorie Counter Project",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KristianELewis/Calorie-Counter-Populator.git"
+  },
+  "author": "Kristian Lewis",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KristianELewis/Calorie-Counter-Populator/issues"
+  },
+  "homepage": "https://github.com/KristianELewis/Calorie-Counter-Populator#readme",
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "dotenv": "^16.3.1",
+    "mysql2": "^3.4.0",
+    "uuid": "^9.0.0"
+  }
+}
