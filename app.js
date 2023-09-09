@@ -1,3 +1,15 @@
+/*
+TODO
+
+
+-it looks like there might be some left over stuff from the sources I was using to learn mysql2, maybe look through at some point and get rid of any uneccessary stuff
+-Not sure if its worth the effort to move over to prepared statements
+-should put some try catches around the table drops
+
+
+*/
+
+
 const uuid = require('uuid');
 const mysql = require('mysql2');
 
@@ -132,8 +144,8 @@ for (let i = 1; i < 11; i++)
 ============================================================*/
 
 const foodItemIDList = [];
-
-connection.query('CREATE TABLE foodItems(foodItemID VARCHAR(36) PRIMARY KEY, name VARCHAR(16), calories INT, protein INT, fat INT, carbs INT)', (err, rows, fields) => {
+//serving unit may change
+connection.query('CREATE TABLE foodItems(foodItemID VARCHAR(36) PRIMARY KEY, name VARCHAR(16), servingSize INT, servingUnit VARCHAR(16), calories INT, protein INT, fat INT, carbs INT)', (err, rows, fields) => {
     if (err) throw err;
     //console.log("Table created");
 
@@ -145,12 +157,16 @@ for (let i = 1; i < 11; i++)
     const foodItemID = `'${uuid.v4()}'`;
     foodItemIDList.push(foodItemID);
     const name = `'Food Item ${i}'`;
+
+    const servingSize = Math.floor(Math.random() * (10) + 1);
+    //whats the point of the (600-100)?
+    const servingUnit = "'g'"
     const calories = Math.floor(Math.random() * (600 - 100) + 100);
     const protein = Math.floor(Math.random() * (100 - 10) + 10);
     const fat = Math.floor(Math.random() * (100 - 10) + 10);
     const carbs = Math.floor(Math.random() * (100 - 10) + 10);
 
-    connection.query(`INSERT INTO foodItems(foodItemID, name, calories, protein, fat, carbs) VALUES (${foodItemID}, ${name}, ${calories}, ${protein}, ${fat}, ${carbs})`, (err, rows, fields) => {
+    connection.query(`INSERT INTO foodItems(foodItemID, name, servingSize, servingUnit, calories, protein, fat, carbs) VALUES (${foodItemID}, ${name}, ${servingSize}, ${servingUnit}, ${calories}, ${protein}, ${fat}, ${carbs})`, (err, rows, fields) => {
         if (err) throw err;
         //console.log(`${name} Inserted`);
         //console.log(rows);
