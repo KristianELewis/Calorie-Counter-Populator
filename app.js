@@ -1,19 +1,13 @@
 /*
 TODO
 
-
--it looks like there might be some left over stuff from the sources I was using to learn mysql2, maybe look through at some point and get rid of any uneccessary stuff
--Not sure if its worth the effort to move over to prepared statements
--should put some try catches around the table drops
+-this can be cleaned up better
 
 
 */
 
-
 const uuid = require('uuid');
-const mysql = require('mysql2');
-
-
+const mysql = require('mysql2/promise');
 
 require('dotenv').config()
 
@@ -22,210 +16,137 @@ const dbUser = process.env.DBUSER
 const dbPassword = process.env.DBPASSWORD
 const database = process.env.DATABASE
 
-//jwt token
-//const bcryptSecret = process.env.BCRYPTSECRET
-
-
 //Database connecting stuff
-const connection = mysql.createConnection({
+const connection = mysql.createPool({
     host: dbHost,
     user: dbUser,
     password: dbPassword,
     database: database
 })
-connection.connect()
-
 
 //bcrypt stuff
-
-
-
-
-
-
 const bcrypt = require('bcrypt');
 const saltRounds = 12;
 
 
-/*============================================================
-
-                    TABLE DROPS BEGIN
-
-============================================================*/
-
-
-connection.query('DROP TABLE loggedMealItems', (err, rows, fields) => {
-    if (err) throw err
-
-    //console.log("Table deleted");
-    //console.log(rows);
-    //console.log(fields);
-  //console.log('The solution is: ', rows[0].solution)
-})
-
-connection.query('DROP TABLE foodItems', (err, rows, fields) => {
-    if (err) throw err
-
-    //console.log("Table deleted");
-    //console.log(rows);
-    //console.log(fields);
-  //console.log('The solution is: ', rows[0].solution)
-})
-
-connection.query('DROP TABLE users', (err, rows, fields) => {
-    if (err) throw err
-
-    //console.log("Table deleted");
-    //console.log(rows);
-    //console.log(fields);
-  //console.log('The solution is: ', rows[0].solution)
-})
-
-
-
-/*============================================================
-
-                    TABLE DROPS END
-
-============================================================*/
-
-/*============================================================
-
-                    USERS TABLE BEGIN
-
-============================================================*/
-
-
-const userIDList = [];
-
-connection.query(
-    `CREATE TABLE users(
-        userID VARCHAR(36) PRIMARY KEY, 
-        username VARCHAR(16) NOT NULL UNIQUE, 
-        password VARCHAR(60), 
-        name VARCHAR(16), 
-        profilePicture BOOL,
-        weight INT, 
-        age INT)`, (err, rows, fields) => {
-    if (err) throw err;
-    //console.log("Table created");
-
-    //console.log(rows);
-})
-
-for (let i = 1; i < 11; i++)
-{
-    const userID = `'${uuid.v4()}'`;
-    userIDList.push(userID);
-    const username = `'username${i}'`
-    const password = `password${i}`
-    const name = `'Name ${i}'`;
-    const weight = Math.floor(Math.random() * (200 - 100) + 100);
-    const age = Math.floor(Math.random() * (100 - 18) + 18);
-
-    const hash = bcrypt.hashSync(password, saltRounds);
-
-    connection.query(`INSERT INTO users(userID, username, password, name, profilePicture, weight, age) VALUES (${userID}, ${username}, '${hash}', ${name}, FALSE, ${weight}, ${age})`, (err, rows, fields) => {
-        if (err) throw err;
-        //console.log(`${name} Inserted`);
-        //console.log(rows);
+async function dropTables(){
+    console.log("drop tables")
+    await connection.query('DROP TABLE loggedMealItems')
+    .then(res => {
+        console.log("loggedMealItems Dropped")    
     })
-}
-/*============================================================
-
-                    USERS TABLE END
-
-============================================================*/
-
-/*============================================================
-
-                    FOOD ITEMS TABLE BEGIN
-
-============================================================*/
-
-const foodItemIDList = [];
-//serving unit may change
-connection.query('CREATE TABLE foodItems(foodItemID VARCHAR(36) PRIMARY KEY, name VARCHAR(16), servingSize INT, servingUnit VARCHAR(16), calories INT, protein INT, fat INT, carbs INT)', (err, rows, fields) => {
-    if (err) throw err;
-    //console.log("Table created");
-
-    //console.log(rows);
-})
-
-for (let i = 1; i < 11; i++)
-{
-    const foodItemID = `'${uuid.v4()}'`;
-    foodItemIDList.push(foodItemID);
-    const name = `'Food Item ${i}'`;
-
-    const servingSize = Math.floor(Math.random() * (10) + 1);
-    //whats the point of the (600-100)?
-    const servingUnit = "'g'"
-    const calories = Math.floor(Math.random() * (600 - 100) + 100);
-    const protein = Math.floor(Math.random() * (100 - 10) + 10);
-    const fat = Math.floor(Math.random() * (100 - 10) + 10);
-    const carbs = Math.floor(Math.random() * (100 - 10) + 10);
-
-    connection.query(`INSERT INTO foodItems(foodItemID, name, servingSize, servingUnit, calories, protein, fat, carbs) VALUES (${foodItemID}, ${name}, ${servingSize}, ${servingUnit}, ${calories}, ${protein}, ${fat}, ${carbs})`, (err, rows, fields) => {
-        if (err) throw err;
-        //console.log(`${name} Inserted`);
-        //console.log(rows);
+    .catch(error => {
+        console.log("loggedMealItems doesnt exist")
     })
 
+    await connection.query('DROP TABLE users')
+    .then(res => {
+        console.log("users Dropped")    
+    })
+    .catch(error => {
+        console.log("users doesnt exist")
+    })
+
+    return(true)
 }
-/*============================================================
 
-                    FOOD ITEMS TABLE END
+async function createTables () {
 
-============================================================*/
+    console.log("create tables")
+    await connection.query(
+        `CREATE TABLE users(
+            userID VARCHAR(36) PRIMARY KEY, 
+            username VARCHAR(16) NOT NULL UNIQUE, 
+            password VARCHAR(60), 
+            name VARCHAR(16), 
+            profilePicture BOOL,
+            weight INT, 
+            age INT)`)
+    .then(res => {
+        console.log("users made")
+    })
+    .catch(error => {
+        throw error
+    })
 
 
-/*============================================================
+    await connection.query('CREATE TABLE loggedMealItems(loggedID VARCHAR(36) PRIMARY KEY, foodItemID VARCHAR(36), userID VARCHAR(36), day DATE, amount INT, meal INT, FOREIGN KEY (foodItemID) REFERENCES foodItems(foodItemID), FOREIGN KEY (userID) REFERENCES users(userID))')
+    .catch(error => {
+        console.log("couldnt create logged items")
+        throw error
+    })
 
-                    LOGGED MEAL ITEMS TABLE BEGIN
+    return true
+}
 
-============================================================*/
 
-connection.query('CREATE TABLE loggedMealItems(loggedID VARCHAR(36) PRIMARY KEY, foodItemID VARCHAR(36), userID VARCHAR(36), day DATE, amount INT, meal INT, FOREIGN KEY (foodItemID) REFERENCES foodItems(foodItemID), FOREIGN KEY (userID) REFERENCES users(userID))', (err, rows, fields) => {
-    if (err) throw err;
-    //console.log("Table created");amount
-
-    //console.log(rows);
-})
-
-//these are shifted up by one because I coppied it from above and am too lazy to change it
-for (let i = 1; i < 11; i++)
-{
-    const userID = userIDList[i-1];
-
-    for (let j = 0; j < 4; j++)
+async function insertData () {
+    const userIDList = [];
+    for (let i = 1; i < 11; i++)
     {
-        const meal = j;
+        const userID = `'${uuid.v4()}'`;
+        userIDList.push(userID);
+        const username = `'username${i}'`
+        const password = `password${i}`
+        const name = `'Name ${i}'`;
+        const weight = Math.floor(Math.random() * (200 - 100) + 100);
+        const age = Math.floor(Math.random() * (100 - 18) + 18);
 
-        for (let k = 0; k < 3; k++)
-        {
-            const loggedID = `'${uuid.v4()}'`;
-            const foodItemID = foodItemIDList[Math.floor(Math.random() * (10))];
-            const amount = Math.floor(Math.random() * (5) + 1);
-            //const meal = Math.floor(Math.random() * (4));
+        const hash = bcrypt.hashSync(password, saltRounds);
 
-            connection.query(`INSERT INTO loggedMealItems(loggedID, foodItemID, userID, day, amount, meal) VALUES (${loggedID}, ${foodItemID}, ${userID}, CURDATE(), ${amount}, ${meal})`, (err, rows, fields) => {
-                if (err) throw err;
-                //console.log(`Logged Item ${(k+1) * i * j} inserted Inserted`);
-                //console.log(rows);
-            })
-
-        }
-
+        //awaiting here for now, should probably do a propmise.all again
+        await connection.query(`INSERT INTO users(userID, username, password, name, profilePicture, weight, age) VALUES (${userID}, ${username}, '${hash}', ${name}, FALSE, ${weight}, ${age})`)
+        .catch(error => {
+            console.log(error)
+        })
     }
 
+    const foodItemIDList = await connection.query('SELECT foodItemID FROM foodItems ORDER BY RAND() LIMIT 0,10')
+    .then(res => {
+        return res[0]
+    })
+    .catch(error => {
+        console.log(error)
+    })
+ 
+    for (let i = 1; i < 11; i++)
+    {
+        const userID = userIDList[i-1];
+    
+        for (let j = 0; j < 4; j++)
+        {
+            const meal = j;
+    
+            for (let k = 0; k < 3; k++)
+            {
+                const loggedID = `'${uuid.v4()}'`;
+                const foodItemID = `'${foodItemIDList[Math.floor(Math.random() * (10))].foodItemID}'`;
+                const amount = Math.floor(Math.random() * (5) + 1);
+                //const meal = Math.floor(Math.random() * (4));
+    
+                await connection.query(`INSERT INTO loggedMealItems(loggedID, foodItemID, userID, day, amount, meal) VALUES (${loggedID}, ${foodItemID}, ${userID}, CURDATE(), ${amount}, ${meal})`)
+                .then(res => {
+                })
+                .catch(error =>{
+                    console.log(error)
+                })
+    
+            }
+    
+        }
+    
+    }
+ 
+    return true
 }
 
-//console.log(mealsIDList);
-/*============================================================
-
-                    LOGGED MEAL ITEMS TABLE END
-
-============================================================*/
-
-connection.end()
+dropTables()
+.then(res => {
+    createTables()
+    .then(res => {
+        insertData()
+        .then(res => {
+            connection.end()
+        })
+    })
+})
